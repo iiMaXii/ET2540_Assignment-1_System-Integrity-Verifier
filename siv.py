@@ -14,6 +14,11 @@ import sys
 SUPPORTED_HASHING_FUNCTIONS = list(hashlib.algorithms_guaranteed)
 
 
+def eprint(*args, **kwargs):
+    """Print to stderr"""
+    print(*args, file=sys.stderr, **kwargs)
+
+
 def is_subpath(base, subpath):
     """Check of base contains subpath"""
     abs_base = os.path.realpath(base)
@@ -77,7 +82,7 @@ def walk_directory_sorted(path, hash_object, walk_stats_object):
     for root, dirs, files in sorted(os.walk(path)):
         walk_stats_object.total_directories += 1
         walk_stats_object.total_files += len(files)
-        print(root)
+
         for d in sorted(dirs):
             file_info.path = os.path.join(root, d)
             file_stat = os.stat(file_info.path)
@@ -107,6 +112,9 @@ def walk_directory_sorted(path, hash_object, walk_stats_object):
             file_info.checksum = get_file_hash(file_info.path,
                                                hash_object.copy())
 
+            if not file_info.checksum:
+                eprint("Error: Unable to read file {}".format(file_info.path));
+
             yield file_info
 
 
@@ -129,52 +137,49 @@ parser.add_argument('-H', type=str, dest='hash_function',
 
 args = parser.parse_args()
 
-sys.exit()
-
 if args.initiation_mode:
     print('Initiation mode.')
 
     if not args.hash_function:
-        print("Error: No hashing algorithm was specified."
-              "Please use option '-H'")
+        eprint("Error: No hashing algorithm was specified."
+               "Please use option '-H'")
         sys.exit()
 
     # a)
     if not os.path.exists(args.monitored_directory):
-        print("Error: monitored directory '{}' does not exist"
-              .format(args.monitored_directory))
+        eprint("Error: monitored directory '{}' does not exist"
+               .format(args.monitored_directory))
         sys.exit()
 
     if not os.path.isdir(args.monitored_directory):
-        print("Error: monitored directory '{}' is not a directory"
-              .format(args.monitored_directory))
+        eprint("Error: monitored directory '{}' is not a directory"
+               .format(args.monitored_directory))
         sys.exit()
 
     # b)
     if is_subpath(args.monitored_directory, args.verification_file):
-        print("Error: verification file ('{}') exists inside monitored "
-              "directory ('{}')".format(args.verification_file,
-                                        args.monitored_directory))
+        eprint("Error: verification file ('{}') exists inside monitored "
+               "directory ('{}')".format(args.verification_file,
+                                         args.monitored_directory))
         sys.exit()
 
     if is_subpath(args.monitored_directory, args.report_file):
-        print("Error: report file ('{}') exists inside monitored directory "
-              "('{}')".format(args.report_file,
-                              args.monitored_directory))
+        eprint("Error: report file ('{}') exists inside monitored directory "
+               "('{}')".format(args.report_file, args.monitored_directory))
         sys.exit()
 
     # c) is done by argument parser
 
     # d)
     if os.path.exists(args.verification_file):
-        print("Error: verification file '{}' already exists"
-              .format(args.verification_file))
+        eprint("Error: verification file '{}' already exists"
+               .format(args.verification_file))
         if not prompt_yes_no("Overwrite existing verification file?"):
             sys.exit()
 
     if os.path.exists(args.report_file):
-        print("Error: report file '{}' already exists"
-              .format(args.report_file))
+        eprint("Error: report file '{}' already exists"
+               .format(args.report_file))
         if not prompt_yes_no("Overwrite existing report file?"):
             sys.exit()
 
@@ -190,8 +195,6 @@ if args.initiation_mode:
 
         for file_info in walk_directory_sorted(args.monitored_directory,
                                                hash_object, walk_stats):
-            if not file_info.checksum and not os.path.isdir(file_info.path):
-                print('Error when reading file {}'.format(file_info.path))
             verification_writer.writerow([file_info.path, file_info.size,
                                           file_info.user, file_info.group,
                                           file_info.mode, file_info.modified,
@@ -219,28 +222,29 @@ if args.verification_mode:
 
     # a)
     if not os.path.isfile(args.verification_file):
-        print("Error: verification file '{}' does not exist"
-              .format(args.monitored_directory))
+        eprint("Error: verification file '{}' does not exist"
+               .format(args.monitored_directory))
         sys.exit()
 
     # b)
     if is_subpath(args.monitored_directory, args.verification_file):
-        print("Error: verification file ('{}') exists inside monitored "
-              "directory ('{}')".format(args.verification_file,
-                                        args.monitored_directory))
+        eprint("Error: verification file ('{}') exists inside monitored "
+               "directory ('{}')".format(args.verification_file,
+                                         args.monitored_directory))
         sys.exit()
 
     # c)
     if is_subpath(args.monitored_directory, args.report_file):
-        print("Error: report file ('{}') exists inside monitored"
-              "directory ('{}')".format(args.report_file,
-                                        args.monitored_directory))
+        eprint("Error: report file ('{}') exists inside monitored"
+               "directory ('{}')".format(args.report_file,
+                                         args.monitored_directory))
         sys.exit()
 
     # d)
     walk_stats = WalkStats()
 
-    with open(args.verification_file, 'r') as verification_handle:
+    with open(args.verification_file, 'r') as verification_handle, \
+         open(args.report_file, 'w') as report_handle:
         dt_start = datetime.datetime.now()
 
         iter_old = csv.reader(verification_handle)
@@ -254,56 +258,52 @@ if args.verification_mode:
         o_file = FileInfo(*next(iter_old, []))
         n_file = next(iter_new, None)
         while o_file or n_file:
-            if (n_file and not n_file.checksum and
-                    not os.path.isdir(n_file.path)):
-                print('Error when reading file {}'.format(n_file.path))
-
             if ((not o_file and n_file) or
                 (o_file and n_file and o_file.path > n_file.path)):
                 # New file
 
-                print('+{} was added'.format(n_file.path))
+                report_handle.write('+{} was added\n'.format(n_file.path))
 
                 n_file = next(iter_new, None)
             elif ((o_file and not n_file) or
                   (o_file and n_file and o_file.path < n_file.path)):
                 # File deleted
 
-                print('-{} was deleted'.format(o_file.path))
+                report_handle.write('-{} was deleted\n'.format(o_file.path))
 
                 o_file = FileInfo(*next(iter_old, []))
             elif o_file and n_file and o_file.path == n_file.path:
                 # Same file
 
                 if o_file.size != n_file.size:
-                    print('*{}, size: {} -> {}'.format(o_file.path,
-                                                       o_file.size,
-                                                       n_file.size))
+                    report_handle.write('*{}, size: {} -> {}\n'
+                                        .format(o_file.path, o_file.size,
+                                                n_file.size))
 
                 if o_file.user != n_file.user:
-                    print('*{}, owner: {} -> {}'.format(o_file.path,
-                                                        o_file.user,
-                                                        n_file.user))
+                    report_handle.write('*{}, owner: {} -> {}\n'
+                                        .format(o_file.path, o_file.user,
+                                                n_file.user))
 
                 if o_file.group != n_file.group:
-                    print('*{}, group: {} -> {}'.format(o_file.path,
-                                                        o_file.group,
-                                                        n_file.group))
+                    report_handle.write('*{}, group: {} -> {}\n'
+                                        .format(o_file.path,o_file.group,
+                                                n_file.group))
 
                 if o_file.mode != n_file.mode:
-                    print('*{}, mode: {} -> {}'.format(o_file.path,
-                                                       o_file.mode,
-                                                       n_file.mode))
+                    report_handle.write('*{}, mode: {} -> {}\n'
+                                        .format(o_file.path, o_file.mode,
+                                                n_file.mode))
 
                 if o_file.modified != n_file.modified:
-                    print('*{}, last modified: {} -> {}'
-                          .format(o_file.path, o_file.modified,
-                                  n_file.modified))
+                    report_handle.write('*{}, last modified: {} -> {}\n'
+                                        .format(o_file.path, o_file.modified,
+                                                n_file.modified))
 
                 if o_file.checksum != n_file.checksum:
-                    print('*{}, checksum: {} -> {}'.format(o_file.path,
-                                                           o_file.checksum,
-                                                           n_file.checksum))
+                    report_handle.write('*{}, checksum: {} -> {}\n'
+                                        .format(o_file.path, o_file.checksum,
+                                                n_file.checksum))
 
                 o_file = FileInfo(*next(iter_old, []))
                 n_file = next(iter_new, None)
@@ -312,8 +312,15 @@ if args.verification_mode:
         dt_end = datetime.datetime.now()
 
     # e)
-    elapsed_milliseconds = (dt_end - dt_start).microseconds / 1000
+        elapsed_milliseconds = (dt_end - dt_start).microseconds / 1000
 
-    print('{} ms'.format(elapsed_milliseconds))
-    print(walk_stats.total_directories)
-    print(walk_stats.total_files)
+        report_handle.write("Monitored directory  : {}\n"
+                            .format(os.path.abspath(args.monitored_directory)))
+        report_handle.write("Verification file    : {}\n"
+                            .format(os.path.abspath(args.verification_file)))
+        report_handle.write("Number of directories: {}\n"
+                            .format(walk_stats.total_directories))
+        report_handle.write("Number of files      : {}\n"
+                            .format(walk_stats.total_files))
+        report_handle.write("Execution time       : {} ms\n"
+                            .format(elapsed_milliseconds))
