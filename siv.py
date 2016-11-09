@@ -141,7 +141,7 @@ if args.initiation_mode:
     print('Initiation mode.')
 
     if not args.hash_function:
-        eprint("Error: No hashing algorithm was specified."
+        eprint("Error: No hashing algorithm was specified. "
                "Please use option '-H'")
         sys.exit()
 
@@ -206,15 +206,15 @@ if args.initiation_mode:
     elapsed_milliseconds = (dt_end - dt_start).microseconds / 1000
 
     with open(args.report_file, 'w') as f:
-        f.write("Monitored directory  : {}\n"
+        f.write("Monitored directory   : {}\n"
                 .format(os.path.abspath(args.monitored_directory)))
-        f.write("Verification file    : {}\n"
+        f.write("Verification file     : {}\n"
                 .format(os.path.abspath(args.verification_file)))
-        f.write("Number of directories: {}\n"
+        f.write("Number of directories : {}\n"
                 .format(walk_stats.total_directories))
-        f.write("Number of files      : {}\n"
+        f.write("Number of files       : {}\n"
                 .format(walk_stats.total_files))
-        f.write("Execution time       : {} ms\n"
+        f.write("Execution time        : {} ms\n"
                 .format(elapsed_milliseconds))
 
 if args.verification_mode:
@@ -223,25 +223,26 @@ if args.verification_mode:
     # a)
     if not os.path.isfile(args.verification_file):
         eprint("Error: verification file '{}' does not exist"
-               .format(args.monitored_directory))
+               .format(args.verification_file))
         sys.exit()
 
     # b)
     if is_subpath(args.monitored_directory, args.verification_file):
-        eprint("Error: verification file ('{}') exists inside monitored "
-               "directory ('{}')".format(args.verification_file,
-                                         args.monitored_directory))
+        eprint("Error: verification file '{}' exists inside monitored "
+               "directory '{}'".format(args.verification_file,
+                                       args.monitored_directory))
         sys.exit()
 
     # c)
     if is_subpath(args.monitored_directory, args.report_file):
-        eprint("Error: report file ('{}') exists inside monitored"
-               "directory ('{}')".format(args.report_file,
-                                         args.monitored_directory))
+        eprint("Error: report file '{}' exists inside monitored "
+               "directory '{}'".format(args.report_file,
+                                       args.monitored_directory))
         sys.exit()
 
     # d)
     walk_stats = WalkStats()
+    num_warnings = 0
 
     with open(args.verification_file, 'r') as verification_handle, \
             open(args.report_file, 'w') as report_handle:
@@ -263,6 +264,7 @@ if args.verification_mode:
                 # New file
 
                 report_handle.write('+{} was added\n'.format(n_file.path))
+                num_warnings += 1
 
                 n_file = next(iter_new, None)
             elif ((o_file and not n_file) or
@@ -270,6 +272,7 @@ if args.verification_mode:
                 # File deleted
 
                 report_handle.write('-{} was deleted\n'.format(o_file.path))
+                num_warnings += 1
 
                 o_file = FileInfo(*next(iter_old, []))
             elif o_file and n_file and o_file.path == n_file.path:
@@ -304,6 +307,7 @@ if args.verification_mode:
                     report_handle.write('*{}, checksum: {} -> {}\n'
                                         .format(o_file.path, o_file.checksum,
                                                 n_file.checksum))
+                num_warnings += 1
 
                 o_file = FileInfo(*next(iter_old, []))
                 n_file = next(iter_new, None)
@@ -314,13 +318,18 @@ if args.verification_mode:
     # e)
         elapsed_milliseconds = (dt_end - dt_start).microseconds / 1000
 
-        report_handle.write("Monitored directory  : {}\n"
+        report_handle.write("Monitored directory   : {}\n"
                             .format(os.path.abspath(args.monitored_directory)))
-        report_handle.write("Verification file    : {}\n"
+        report_handle.write("Verification file     : {}\n"
                             .format(os.path.abspath(args.verification_file)))
-        report_handle.write("Number of directories: {}\n"
+        report_handle.write("Report file (this)    : {}\n"
+                            .format(os.path.abspath(args.report_file)))
+        report_handle.write("Number of directories : {}\n"
                             .format(walk_stats.total_directories))
-        report_handle.write("Number of files      : {}\n"
+        report_handle.write("Number of files       : {}\n"
                             .format(walk_stats.total_files))
-        report_handle.write("Execution time       : {} ms\n"
+        report_handle.write("Number of warnings    : {}\n"
+                            .format(num_warnings))
+        report_handle.write("Execution time        : {} ms\n"
                             .format(elapsed_milliseconds))
+
