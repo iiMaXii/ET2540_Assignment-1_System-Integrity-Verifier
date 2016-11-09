@@ -113,7 +113,7 @@ def walk_directory_sorted(path, hash_object, walk_stats_object):
                                                hash_object.copy())
 
             if not file_info.checksum:
-                eprint("Error: Unable to read file {}".format(file_info.path));
+                eprint("Error: Unable to read file {}".format(file_info.path))
 
             yield file_info
 
@@ -244,7 +244,7 @@ if args.verification_mode:
     walk_stats = WalkStats()
 
     with open(args.verification_file, 'r') as verification_handle, \
-         open(args.report_file, 'w') as report_handle:
+            open(args.report_file, 'w') as report_handle:
         dt_start = datetime.datetime.now()
 
         iter_old = csv.reader(verification_handle)
@@ -259,7 +259,7 @@ if args.verification_mode:
         n_file = next(iter_new, None)
         while o_file or n_file:
             if ((not o_file and n_file) or
-                (o_file and n_file and o_file.path > n_file.path)):
+                    (o_file and n_file and o_file.path > n_file.path)):
                 # New file
 
                 report_handle.write('+{} was added\n'.format(n_file.path))
@@ -287,7 +287,7 @@ if args.verification_mode:
 
                 if o_file.group != n_file.group:
                     report_handle.write('*{}, group: {} -> {}\n'
-                                        .format(o_file.path,o_file.group,
+                                        .format(o_file.path, o_file.group,
                                                 n_file.group))
 
                 if o_file.mode != n_file.mode:
