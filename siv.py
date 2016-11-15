@@ -78,7 +78,8 @@ def walk_directory_sorted(path, hash_object, walk_stats_object):
     """Recursively walk through a directory"""
     file_info = FileInfo()
 
-    for root, dirs, files in sorted(os.walk(path)):
+    abs_path = os.path.abspath(path)
+    for root, dirs, files in sorted(os.walk(abs_path)):
         walk_stats_object.total_directories += 1
         walk_stats_object.total_files += len(files)
 
