@@ -7,7 +7,6 @@ import grp
 import hashlib
 import os
 import pwd
-import stat
 import sys
 
 # SUPPORTED_HASHING_FUNCTIONS = list(hashlib.algorithms_available)
@@ -119,7 +118,12 @@ def walk_directory_sorted(path, hash_object, walk_stats_object):
 
 
 parser = argparse.ArgumentParser(
-    description='Simple system integrity verifier.')
+    formatter_class=argparse.RawTextHelpFormatter,
+    description='Simple system integrity verifier.',
+    epilog='Example:\n'
+           '    {} -i -D /etc/ -V db.csv -R report.txt -H md5\n'
+           '    {} -v -D /etc/ -V db.csv -R report.txt'.format(sys.argv[0],
+                                                               sys.argv[0]))
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('-i', action='store_true', dest='initiation_mode',
                    help='enable initiation mode')
@@ -203,7 +207,7 @@ if args.initiation_mode:
         dt_end = datetime.datetime.now()
 
     # f)
-    elapsed_milliseconds = (dt_end - dt_start).microseconds / 1000
+    elapsed_milliseconds = (dt_end - dt_start).total_seconds()
 
     with open(args.report_file, 'w') as f:
         f.write("Monitored directory   : {}\n"
@@ -214,7 +218,7 @@ if args.initiation_mode:
                 .format(walk_stats.total_directories))
         f.write("Number of files       : {}\n"
                 .format(walk_stats.total_files))
-        f.write("Execution time        : {} ms\n"
+        f.write("Execution time        : {}s\n"
                 .format(elapsed_milliseconds))
 
 if args.verification_mode:
@@ -316,7 +320,7 @@ if args.verification_mode:
         dt_end = datetime.datetime.now()
 
     # e)
-        elapsed_milliseconds = (dt_end - dt_start).microseconds / 1000
+        elapsed_milliseconds = (dt_end - dt_start).total_seconds()
 
         report_handle.write("Monitored directory   : {}\n"
                             .format(os.path.abspath(args.monitored_directory)))
@@ -330,6 +334,5 @@ if args.verification_mode:
                             .format(walk_stats.total_files))
         report_handle.write("Number of warnings    : {}\n"
                             .format(num_warnings))
-        report_handle.write("Execution time        : {} ms\n"
+        report_handle.write("Execution time        : {}s\n"
                             .format(elapsed_milliseconds))
-
