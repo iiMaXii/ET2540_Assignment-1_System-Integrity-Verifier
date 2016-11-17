@@ -287,32 +287,38 @@ if args.verification_mode:
                     report_handle.write('*{}, size: {} -> {}\n'
                                         .format(o_file.path, o_file.size,
                                                 n_file.size))
+                    num_warnings += 1
 
                 if o_file.user != n_file.user:
                     report_handle.write('*{}, owner: {} -> {}\n'
                                         .format(o_file.path, o_file.user,
                                                 n_file.user))
+                    num_warnings += 1
 
                 if o_file.group != n_file.group:
                     report_handle.write('*{}, group: {} -> {}\n'
                                         .format(o_file.path, o_file.group,
                                                 n_file.group))
+                    num_warnings += 1
 
                 if o_file.mode != n_file.mode:
                     report_handle.write('*{}, mode: {} -> {}\n'
                                         .format(o_file.path, o_file.mode,
                                                 n_file.mode))
+                    num_warnings += 1
 
                 if o_file.modified != n_file.modified:
                     report_handle.write('*{}, last modified: {} -> {}\n'
                                         .format(o_file.path, o_file.modified,
                                                 n_file.modified))
+                    num_warnings += 1
 
                 if o_file.checksum != n_file.checksum:
                     report_handle.write('*{}, checksum: {} -> {}\n'
                                         .format(o_file.path, o_file.checksum,
                                                 n_file.checksum))
-                num_warnings += 1
+                    num_warnings += 1
+
 
                 o_file = FileInfo(*next(iter_old, []))
                 n_file = next(iter_new, None)
