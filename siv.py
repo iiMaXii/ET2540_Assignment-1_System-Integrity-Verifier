@@ -319,7 +319,6 @@ if args.verification_mode:
                                                 n_file.checksum))
                     num_warnings += 1
 
-
                 o_file = FileInfo(*next(iter_old, []))
                 n_file = next(iter_new, None)
             else:
