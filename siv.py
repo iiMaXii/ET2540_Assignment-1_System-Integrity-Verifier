@@ -82,13 +82,14 @@ def walk_directory_sorted(path, hash_object, walk_stats_object):
 
     # Collect a list of all files and directories
     all_files = []
-    for root, dirs, files in sorted(os.walk(abs_path)):
+    for root, dirs, files in os.walk(abs_path):
         walk_stats_object.total_directories += len(dirs)
         walk_stats_object.total_files += len(files)
 
         for f in files + dirs:
             all_files.append(os.path.join(root, f))
 
+    # Grab file info
     for file_path in sorted(all_files):
         file_info.path = file_path
         file_stat = os.stat(file_info.path)
