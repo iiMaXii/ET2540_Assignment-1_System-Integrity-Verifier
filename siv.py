@@ -79,32 +79,38 @@ def walk_directory_sorted(path, hash_object, walk_stats_object):
     file_info = FileInfo()
 
     abs_path = os.path.abspath(path)
+
+    # Collect a list of all files and directories
+    all_files = []
     for root, dirs, files in sorted(os.walk(abs_path)):
-        walk_stats_object.total_directories += 1
+        walk_stats_object.total_directories += len(dirs)
         walk_stats_object.total_files += len(files)
 
-        for file in sorted(files + dirs):
-            file_info.path = os.path.join(root, file)
-            file_stat = os.stat(file_info.path)
+        for f in files + dirs:
+            all_files.append(os.path.join(root, f))
 
-            file_info.size = file_stat.st_size
-            file_info.user = pwd.getpwuid(file_stat.st_uid).pw_name
-            file_info.group = grp.getgrgid(file_stat.st_gid).gr_name
-            file_info.mode = oct(file_stat.st_mode)  # & 0777
-            file_info.modified = datetime.datetime \
-                .fromtimestamp(file_stat.st_mtime) \
-                .strftime('%Y-%m-%d %H:%M:%S')
+    for file_path in sorted(all_files):
+        file_info.path = file_path
+        file_stat = os.stat(file_info.path)
 
-            if os.path.isfile(file_info.path):
-                file_info.checksum = get_file_hash(file_info.path,
-                                                   hash_object.copy())
-                if not file_info.checksum:
-                    eprint("Error: Unable to read file {}"
-                           .format(file_info.path))
-            else:
-                file_info.checksum = None
+        file_info.size = file_stat.st_size
+        file_info.user = pwd.getpwuid(file_stat.st_uid).pw_name
+        file_info.group = grp.getgrgid(file_stat.st_gid).gr_name
+        file_info.mode = oct(file_stat.st_mode)  # & 0777
+        file_info.modified = datetime.datetime \
+            .fromtimestamp(file_stat.st_mtime) \
+            .strftime('%Y-%m-%d %H:%M:%S')
 
-            yield file_info
+        if os.path.isfile(file_info.path):
+            file_info.checksum = get_file_hash(file_info.path,
+                                               hash_object.copy())
+            if not file_info.checksum:
+                eprint("Error: Unable to read file {}"
+                       .format(file_info.path))
+        else:
+            file_info.checksum = None
+
+        yield file_info
 
 
 parser = argparse.ArgumentParser(
