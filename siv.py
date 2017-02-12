@@ -106,8 +106,7 @@ def walk_directory_sorted(path, hash_object, walk_stats_object):
             file_info.checksum = get_file_hash(file_info.path,
                                                hash_object.copy())
             if not file_info.checksum:
-                eprint("Error: Unable to read file {}"
-                       .format(file_info.path))
+                eprint("Error: Unable to read file {}".format(file_info.path))
         else:
             file_info.checksum = None
 
@@ -146,7 +145,6 @@ if args.initiation_mode:
                "Please use option '-H'")
         sys.exit()
 
-    # a)
     if not os.path.exists(args.monitored_directory):
         eprint("Error: monitored directory '{}' does not exist"
                .format(args.monitored_directory))
@@ -157,7 +155,6 @@ if args.initiation_mode:
                .format(args.monitored_directory))
         sys.exit()
 
-    # b)
     if is_subpath(args.monitored_directory, args.verification_file):
         eprint("Error: verification file ('{}') exists inside monitored "
                "directory ('{}')".format(args.verification_file,
@@ -169,9 +166,6 @@ if args.initiation_mode:
                "('{}')".format(args.report_file, args.monitored_directory))
         sys.exit()
 
-    # c) is done by argument parser
-
-    # d)
     if os.path.exists(args.verification_file):
         eprint("Error: verification file '{}' already exists"
                .format(args.verification_file))
@@ -184,7 +178,6 @@ if args.initiation_mode:
         if not prompt_yes_no("Overwrite existing report file?"):
             sys.exit()
 
-    # e)
     hash_object = hashlib.new(args.hash_function)
     walk_stats = WalkStats()
 
@@ -203,8 +196,7 @@ if args.initiation_mode:
 
         dt_end = datetime.datetime.now()
 
-    # f)
-    elapsed_milliseconds = (dt_end - dt_start).total_seconds()
+        elapsed_seconds = (dt_end - dt_start).total_seconds()
 
     with open(args.report_file, 'w') as f:
         f.write("Monitored directory   : {}\n"
@@ -216,32 +208,28 @@ if args.initiation_mode:
         f.write("Number of files       : {}\n"
                 .format(walk_stats.total_files))
         f.write("Execution time        : {}s\n"
-                .format(elapsed_milliseconds))
+                .format(elapsed_seconds))
 
 if args.verification_mode:
     print('Verification mode.')
 
-    # a)
     if not os.path.isfile(args.verification_file):
         eprint("Error: verification file '{}' does not exist"
                .format(args.verification_file))
         sys.exit()
 
-    # b)
     if is_subpath(args.monitored_directory, args.verification_file):
         eprint("Error: verification file '{}' exists inside monitored "
                "directory '{}'".format(args.verification_file,
                                        args.monitored_directory))
         sys.exit()
 
-    # c)
     if is_subpath(args.monitored_directory, args.report_file):
         eprint("Error: report file '{}' exists inside monitored "
                "directory '{}'".format(args.report_file,
                                        args.monitored_directory))
         sys.exit()
 
-    # d)
     walk_stats = WalkStats()
     num_warnings = 0
 
@@ -321,8 +309,7 @@ if args.verification_mode:
                 raise Exception("Internal logic error!")
         dt_end = datetime.datetime.now()
 
-    # e)
-        elapsed_milliseconds = (dt_end - dt_start).total_seconds()
+        elapsed_seconds = (dt_end - dt_start).total_seconds()
 
         report_handle.write("Monitored directory   : {}\n"
                             .format(os.path.abspath(args.monitored_directory)))
@@ -337,4 +324,4 @@ if args.verification_mode:
         report_handle.write("Number of warnings    : {}\n"
                             .format(num_warnings))
         report_handle.write("Execution time        : {}s\n"
-                            .format(elapsed_milliseconds))
+                            .format(elapsed_seconds))
